@@ -82,36 +82,28 @@ async fn ask_ai(query: String) -> Result<()> {
     Ok(())
 }
 
-fn show_status() {
-    // Get API key configuration
+// Check if a specific API key is configured
+fn is_key_configured(key_name: &str) -> String {
     let config_dir = dirs::config_dir().unwrap_or_else(|| "unknown config dir".into());
     let config_file = config_dir.join("tt").join("config.json");
 
-    let openai_key_configured = if config_file.exists() {
-        match fs::read_to_string(&config_file) {
-            Ok(content) => {
-                match serde_json::from_str::<serde_json::Value>(&content) {
-                    Ok(config) => {
-                        if let Some(key) = config.get("openai_api_key") {
-                            if key.is_string() && !key.as_str().unwrap_or_default().is_empty() {
-                                "Yes".to_string()
-                            } else {
-                                "No".to_string()
-                            }
-                        } else {
-                            "No".to_string()
-                        }
-                    }
-                    Err(_) => "No".to_string(),
+    match fs::read_to_string(&config_file) {
+        Ok(content) => match serde_json::from_str::<serde_json::Value>(&content) {
+            Ok(config) => config.get(key_name).map_or("No", |key| 
+                if key.is_string() && !key.as_str().unwrap_or_default().is_empty() {
+                    "Yes"
+                } else {
+                    "No"
                 }
-            }
+            ).to_string(),
             Err(_) => "No".to_string(),
-        }
-    } else {
-        "No".to_string()
-    };
+        },
+        Err(_) => "No".to_string(),
+    }
+}
 
-    println!("OpenAI API Key Configured: {}", openai_key_configured);
+fn show_status() {
+    println!("OpenAI API Key Configured: {}", is_key_configured("openai_api_key"));
 }
 
 fn config() {
