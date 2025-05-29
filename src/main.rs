@@ -83,25 +83,6 @@ async fn ask_ai(query: String) -> Result<()> {
 }
 
 fn show_status() {
-    // Get OS information
-    let os = match std::env::consts::OS {
-        "windows" => "Windows",
-        "linux" => "Linux",
-        "macos" => "macOS",
-        _ => "Unknown",
-    };
-
-    // Get system information using sysinfo
-    let mut system = System::new_all();
-    system.refresh_all();
-
-    // Get terminal and shell information
-    let terminal = env::var("TERM").unwrap_or_else(|_| "unknown terminal".into());
-    let shell = match system.process(Pid::from_u32(std::process::id())) {
-        Some(process) => format!("{} Shell", process.name().to_string()),
-        None => env::var("SHELL").unwrap_or_else(|_| "unknown shell".into()),
-    };
-
     // Get API key configuration
     let config_dir = dirs::config_dir().unwrap_or_else(|| "unknown config dir".into());
     let config_file = config_dir.join("tt").join("config.json");
@@ -130,12 +111,7 @@ fn show_status() {
         "No".to_string()
     };
 
-    println!("=== System Status ===");
-    println!("OS: {}", os);
-    println!("Terminal: {}", terminal);
-    println!("Shell: {}", shell);
     println!("OpenAI API Key Configured: {}", openai_key_configured);
-    println!("==================");
 }
 
 fn config() {
