@@ -6,6 +6,8 @@ use std::env;
 use tokio;
 use dirs;
 use serde_json;
+use std::fs;
+use sysinfo::{System, SystemExt, ProcessExt, Pid, PidExt};
 
 #[derive(Parser)]
 #[command(name = "tt", version, author, about = "AI-based terminal command helper")]
@@ -81,11 +83,59 @@ async fn ask_ai(query: String) -> Result<()> {
 }
 
 fn show_status() {
-    let cwd = env::current_dir().unwrap_or_else(|_| "unknown directory".into());
-    let user = env::var("USERNAME").or_else(|_| env::var("USER")).unwrap_or_else(|_| "Unknown".into());
+    // Get OS information
+    let os = match std::env::consts::OS {
+        "windows" => "Windows",
+        "linux" => "Linux",
+        "macos" => "macOS",
+        _ => "Unknown",
+    };
 
-    println!("User: {}", user);
-    println!("Current directory: {}", cwd.display());
+    // Get system information using sysinfo
+    let mut system = System::new_all();
+    system.refresh_all();
+
+    // Get terminal and shell information
+    let terminal = env::var("TERM").unwrap_or_else(|_| "unknown terminal".into());
+    let shell = match system.process(Pid::from_u32(std::process::id())) {
+        Some(process) => format!("{} Shell", process.name().to_string()),
+        None => env::var("SHELL").unwrap_or_else(|_| "unknown shell".into()),
+    };
+
+    // Get API key configuration
+    let config_dir = dirs::config_dir().unwrap_or_else(|| "unknown config dir".into());
+    let config_file = config_dir.join("tt").join("config.json");
+
+    let openai_key_configured = if config_file.exists() {
+        match fs::read_to_string(&config_file) {
+            Ok(content) => {
+                match serde_json::from_str::<serde_json::Value>(&content) {
+                    Ok(config) => {
+                        if let Some(key) = config.get("openai_api_key") {
+                            if key.is_string() && !key.as_str().unwrap_or_default().is_empty() {
+                                "Yes".to_string()
+                            } else {
+                                "No".to_string()
+                            }
+                        } else {
+                            "No".to_string()
+                        }
+                    }
+                    Err(_) => "No".to_string(),
+                }
+            }
+            Err(_) => "No".to_string(),
+        }
+    } else {
+        "No".to_string()
+    };
+
+    println!("=== System Status ===");
+    println!("OS: {}", os);
+    println!("Terminal: {}", terminal);
+    println!("Shell: {}", shell);
+    println!("OpenAI API Key Configured: {}", openai_key_configured);
+    println!("==================");
 }
 
 fn config() {
@@ -95,8 +145,7 @@ fn config() {
 
 fn configure_openai(api_key: String) -> Result<()> {
     use std::fs;
-    use std::path::Path;
-    use serde_json::json;
+    use serde_json;
 
     let config_dir = dirs::config_dir().ok_or_else(|| anyhow::anyhow!("Failed to get config directory"))?;
     let config_file = config_dir.join("tt").join("config.json");
@@ -109,17 +158,13 @@ fn configure_openai(api_key: String) -> Result<()> {
     // Read existing config or create new one
     let config = if config_file.exists() {
         let content = fs::read_to_string(&config_file)?;
-        serde_json::from_str(&content)?
+        serde_json::from_str::<serde_json::Value>(&content)?
     } else {
-        serde_json::Map::new()
+        serde_json::json!({ "openai_api_key": api_key })
     };
 
-    // Update config with OpenAI API key
-    let mut config = config.as_object_mut().unwrap_or(&mut serde_json::Map::new());
-    config.insert("openai_api_key".to_string(), json!(api_key));
-
     // Write config back to file
-    let config_str = serde_json::to_string_pretty(config)?;
+    let config_str = serde_json::to_string_pretty(&config)?;
     fs::write(config_file, config_str)?;
 
     info!("OpenAI API key configured successfully");
