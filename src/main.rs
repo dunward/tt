@@ -173,7 +173,6 @@ async fn ask_ai(query: String) -> Result<()> {
         // println!("Requesting edit suggestion...");
         // TODO: Implement edit suggestion request
     } else if selected == "Exit" {
-        println!("Exiting...");
         return Ok(());
     }
     
