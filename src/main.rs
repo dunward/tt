@@ -91,10 +91,21 @@ async fn ask_ai(query: String) -> Result<()> {
     let client = reqwest::Client::new();
     let url = "https://api.openai.com/v1/chat/completions";
     
-    // Prepare request body
+    // Define the response schema
+    #[derive(serde::Deserialize)]
+    struct CommandResponse {
+        description: String,
+        command: String,
+    }
+    
+    // Prepare request body with schema guidance
     let body = serde_json::json!({
         "model": "gpt-4o-mini",
         "messages": [
+            {
+                "role": "system",
+                "content": "You are a helpful command assistant. Always respond in JSON format with the following structure:\n{\n    \"description\": \"Description about the command and user's input response\",\n    \"command\": \"The actual command to execute\"\n}\nEnsure the response is valid JSON and contains both fields."
+            },
             {
                 "role": "user",
                 "content": query
@@ -125,7 +136,14 @@ async fn ask_ai(query: String) -> Result<()> {
         .and_then(|content| content.as_str())
         .unwrap_or("No response received");
     
-    println!("\nAI Response:\n{}\n", answer);
+    // Parse JSON response
+    let json_response = serde_json::from_str::<CommandResponse>(answer)
+        .map_err(|e| anyhow::anyhow!("Failed to parse JSON response: {}\nRaw response: {}", e, answer))?;
+    
+    println!("\nAI Response:");
+    println!("Description: {}", json_response.description);
+    println!("Command: {}", json_response.command);
+    println!();
     
     // Show options menu
     let options = vec![
