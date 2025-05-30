@@ -2,14 +2,12 @@ use clap::{Parser, Subcommand};
 use anyhow::Result;
 use tracing::{info, error};
 use tracing_subscriber;
-use std::env;
 use tokio;
 use dirs;
 use serde_json;
 use std::fs;
-use sysinfo::{System, SystemExt, ProcessExt, Pid, PidExt};
 use inquire::Select;
-use ansi_term::Style;
+mod system_info;
 
 #[derive(Parser)]
 #[command(name = "tt", version, author, about = "AI-based terminal command helper")]
@@ -194,20 +192,13 @@ fn is_key_configured(key_name: &str) -> String {
 }
 
 fn show_status() {
-    let system = sysinfo::System::new_with_specifics(
-        sysinfo::RefreshKind::new().with_processes(sysinfo::ProcessRefreshKind::new()),
-    );
+    let (os_name, os_version) = system_info::get_os_info();
+    let shell = system_info::get_shell_info();
 
-    let parent_name = sysinfo::get_current_pid()
-        .ok()
-        .and_then(|pid| system.process(pid))
-        .and_then(|proc| proc.parent())
-        .and_then(|parent_pid| system.process(parent_pid))
-        .map(|proc| proc.name())
-        .unwrap_or("Unknown shell");
-
-    println!("Current shell: {}", parent_name);
+    println!("\nOS: {} {}", os_name, os_version);
+    println!("Shell: {}", shell);
     println!("OpenAI API Key Configured: {}", is_key_configured("openai_api_key"));
+    println!();
 }
 
 fn config() {
