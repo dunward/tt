@@ -97,13 +97,18 @@ async fn ask_ai(query: String) -> Result<()> {
         command: String,
     }
     
+    // Get OS and shell information
+    let (os_name, os_version) = system_info::get_os_info();
+    let shell = system_info::get_shell_info();
+    
     // Prepare request body with schema guidance
     let body = serde_json::json!({
         "model": "gpt-4o-mini",
         "messages": [
             {
                 "role": "system",
-                "content": "You are a helpful command assistant. Always respond in JSON format with the following structure:\n{\n    \"description\": \"Description about the command and user's input response\",\n    \"command\": \"The actual command to execute\"\n}\nEnsure the response is valid JSON and contains both fields."
+                "content": format!("You are a helpful command assistant.\n\nCurrent User:\nOS : {}\nOS Version : {}\nShell : {}\nAlways respond in JSON format with the following structure:\n{{\n    \"description\": \"Description about the command and user's input response\",\n    \"command\": \"The actual command to execute\"\n}}\nEnsure the response is valid JSON and contains both fields.",
+                os_name, os_version, shell)
             },
             {
                 "role": "user",
@@ -149,7 +154,7 @@ async fn ask_ai(query: String) -> Result<()> {
     // Show options menu
     let options = vec![
         "Execute command",
-        "Request edit suggestion",
+        // "Request edit suggestion",
         "Exit"
     ];
     
@@ -161,7 +166,7 @@ async fn ask_ai(query: String) -> Result<()> {
         println!("Executing command...");
         // TODO: Implement command execution
     } else if selected == "Request edit suggestion" {
-        println!("Requesting edit suggestion...");
+        // println!("Requesting edit suggestion...");
         // TODO: Implement edit suggestion request
     } else if selected == "Exit" {
         println!("Exiting...");
