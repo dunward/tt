@@ -9,6 +9,7 @@ use serde_json;
 use std::fs;
 use sysinfo::{System, SystemExt, ProcessExt, Pid, PidExt};
 use inquire::Select;
+use ansi_term::Style;
 
 #[derive(Parser)]
 #[command(name = "tt", version, author, about = "AI-based terminal command helper")]
@@ -140,9 +141,11 @@ async fn ask_ai(query: String) -> Result<()> {
     let json_response = serde_json::from_str::<CommandResponse>(answer)
         .map_err(|e| anyhow::anyhow!("Failed to parse JSON response: {}\nRaw response: {}", e, answer))?;
     
-    println!("\nAI Response:");
-    println!("Description: {}", json_response.description);
-    println!("Command: {}", json_response.command);
+    // Format and display the response
+    println!("\n{}", ansi_term::Colour::Green.bold().paint("Summary:"));
+    println!("  {}", json_response.description);
+    println!("\n{}", ansi_term::Colour::Yellow.bold().paint("Command:"));
+    println!("  {}", json_response.command);
     println!();
     
     // Show options menu
