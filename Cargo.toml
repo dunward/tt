@@ -16,6 +16,7 @@ dirs = "5.0"
 sysinfo = "0.29"
 inquire = "0.7.5"
 ansi_term = "0.12.1"
+arboard = "3.5.0"
 
 [features]
 default = []

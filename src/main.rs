@@ -7,6 +7,7 @@ use dirs;
 use serde_json;
 use std::fs;
 use inquire::Select;
+use arboard::Clipboard;
 mod system_info;
 
 #[derive(Parser)]
@@ -153,7 +154,7 @@ async fn ask_ai(query: String) -> Result<()> {
     
     // Show options menu
     let options = vec![
-        "Execute command",
+        "Copy command",
         // "Request edit suggestion",
         "Exit"
     ];
@@ -162,9 +163,12 @@ async fn ask_ai(query: String) -> Result<()> {
         .with_help_message("Use arrow keys to navigate")
         .prompt()?;
     
-    if selected == "Execute command" {
-        println!("Executing command...");
-        // TODO: Implement command execution
+    if selected == "Copy command" {
+        // Copy command to clipboard
+        let mut clipboard = Clipboard::new().expect("Failed to initialize clipboard");
+        clipboard.set_text(json_response.command.clone()).expect("Failed to copy command to clipboard");
+        println!("{} Command copied to clipboard!", ansi_term::Colour::Green.bold().paint("✓"));
+        return Ok(());
     } else if selected == "Request edit suggestion" {
         // println!("Requesting edit suggestion...");
         // TODO: Implement edit suggestion request
