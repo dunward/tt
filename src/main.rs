@@ -8,6 +8,7 @@ use dirs;
 use serde_json;
 use std::fs;
 use sysinfo::{System, SystemExt, ProcessExt, Pid, PidExt};
+use inquire::Select;
 
 #[derive(Parser)]
 #[command(name = "tt", version, author, about = "AI-based terminal command helper")]
@@ -76,8 +77,6 @@ async fn main() -> Result<()> {
 }
 
 async fn ask_ai(query: String) -> Result<()> {
-    info!("Asking AI: {}", query);
-    
     // Get API key from config
     let config_dir = dirs::config_dir().ok_or_else(|| anyhow::anyhow!("Failed to get config directory"))?;
     let config_file = config_dir.join("tt").join("config.json");
@@ -94,7 +93,7 @@ async fn ask_ai(query: String) -> Result<()> {
     
     // Prepare request body
     let body = serde_json::json!({
-        "model": "gpt-3.5-turbo",
+        "model": "gpt-4o-mini",
         "messages": [
             {
                 "role": "user",
@@ -126,8 +125,30 @@ async fn ask_ai(query: String) -> Result<()> {
         .and_then(|content| content.as_str())
         .unwrap_or("No response received");
     
-    println!("\nAI Response:\n{}
-", answer);
+    println!("\nAI Response:\n{}\n", answer);
+    
+    // Show options menu
+    let options = vec![
+        "Execute command",
+        "Request edit suggestion",
+        "Exit"
+    ];
+    
+    let selected = Select::new("Choose an option:", options)
+        .with_help_message("Use arrow keys to navigate")
+        .prompt()?;
+    
+    if selected == "Execute command" {
+        println!("Executing command...");
+        // TODO: Implement command execution
+    } else if selected == "Request edit suggestion" {
+        println!("Requesting edit suggestion...");
+        // TODO: Implement edit suggestion request
+    } else if selected == "Exit" {
+        println!("Exiting...");
+        return Ok(());
+    }
+    
     Ok(())
 }
 
