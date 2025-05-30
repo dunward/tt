@@ -76,9 +76,58 @@ async fn main() -> Result<()> {
 }
 
 async fn ask_ai(query: String) -> Result<()> {
-    // TODO: Implement AI communication
-    // This will be implemented with actual LLM API integration
     info!("Asking AI: {}", query);
+    
+    // Get API key from config
+    let config_dir = dirs::config_dir().ok_or_else(|| anyhow::anyhow!("Failed to get config directory"))?;
+    let config_file = config_dir.join("tt").join("config.json");
+    
+    let config_content = fs::read_to_string(&config_file)?;
+    let config: serde_json::Value = serde_json::from_str(&config_content)?;
+    let api_key = config.get("openai_api_key")
+        .and_then(|key| key.as_str())
+        .ok_or_else(|| anyhow::anyhow!("OpenAI API key not configured"))?;
+    
+    // Create client with API key
+    let client = reqwest::Client::new();
+    let url = "https://api.openai.com/v1/chat/completions";
+    
+    // Prepare request body
+    let body = serde_json::json!({
+        "model": "gpt-3.5-turbo",
+        "messages": [
+            {
+                "role": "user",
+                "content": query
+            }
+        ]
+    });
+    
+    // Make request
+    let response = client
+        .post(url)
+        .header("Authorization", format!("Bearer {}", api_key))
+        .header("Content-Type", "application/json")
+        .json(&body)
+        .send()
+        .await?;
+    
+    if !response.status().is_success() {
+        let error_text = response.text().await?;
+        return Err(anyhow::anyhow!("OpenAI API error: {}", error_text));
+    }
+    
+    let response_json: serde_json::Value = response.json().await?;
+    let answer = response_json
+        .get("choices")
+        .and_then(|choices| choices.get(0))
+        .and_then(|choice| choice.get("message"))
+        .and_then(|message| message.get("content"))
+        .and_then(|content| content.as_str())
+        .unwrap_or("No response received");
+    
+    println!("\nAI Response:\n{}
+", answer);
     Ok(())
 }
 
