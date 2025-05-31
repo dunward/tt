@@ -227,12 +227,15 @@ fn configure_openai(api_key: String) -> Result<()> {
     }
 
     // Read existing config or create new one
-    let config = if config_file.exists() {
+    let mut config = if config_file.exists() {
         let content = fs::read_to_string(&config_file)?;
         serde_json::from_str::<serde_json::Value>(&content)?
     } else {
-        serde_json::json!({ "openai_api_key": api_key })
+        serde_json::json!({})
     };
+
+    // Update or set the API key
+    config["openai_api_key"] = serde_json::Value::String(api_key);
 
     // Write config back to file
     let config_str = serde_json::to_string_pretty(&config)?;
