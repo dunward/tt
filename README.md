@@ -6,6 +6,11 @@ Unlike Copilot, it doesn’t require a GitHub license — just plug in your own 
 Type natural language commands and let tt suggest and execute the appropriate terminal commands for your system.
 
 ## Install
+### macOS
+```
+curl https://raw.githubusercontent.com/dunward/tt/master/install.sh | bash
+```
+
 ### Windows (PowerShell)
 ```
 irm https://raw.githubusercontent.com/dunward/tt/master/install.ps1 | iex
