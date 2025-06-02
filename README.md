@@ -25,19 +25,3 @@ Once configured, you can ask natural language questions and receive command sugg
 ```
 tt ask "your query"
 ```
-
-### Usage Example
-```
-tt ask "print all .png files in this directory"
-
-Summary:
-  The command lists all files with the .png extension in the current directory.
-
-Command:
-  Get-ChildItem -Filter *.png
-
-? Choose an option:
-> Copy command
-  Exit
-[Use arrow keys to navigate]
-```
